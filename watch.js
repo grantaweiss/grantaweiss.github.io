@@ -18,7 +18,7 @@ source.setAttribute('src', srcURL);
 source.setAttribute('type', 'application/x-mpegURL');
 video.appendChild(source);
 
-videojs('my-video', {
+videojs('my-video'{
   html5: {
     hls: {
       overrideNative: false
@@ -26,9 +26,7 @@ videojs('my-video', {
     nativeAudioTracks: true,
     nativeVideoTracks: true,
     nativeTextTracks: true
-  }
-});
-videojs('my-video').ready(function() {
+  }).ready(function() {
   this.hotkeys({
     volumeStep: 0.1,
     seekStep: 5,
