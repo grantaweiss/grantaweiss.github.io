@@ -18,6 +18,16 @@ source.setAttribute('src', srcURL);
 source.setAttribute('type', 'application/x-mpegURL');
 video.appendChild(source);
 
+videojs('my-video', {
+  html5: {
+    hls: {
+      overrideNative: false
+    },
+    nativeAudioTracks: true,
+    nativeVideoTracks: true,
+    nativeTextTracks: true
+  }
+});
 videojs('my-video').ready(function() {
   this.hotkeys({
     volumeStep: 0.1,
