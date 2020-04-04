@@ -1,0 +1,43 @@
+html, body {
+  padding: 0;
+  margin: 0;
+  background: black;
+  height: 100%;
+}
+.video-js {
+  margin: auto;
+  position: absolute !important;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+video:focus {
+  outline: 0;
+}
+
+
+.vjs-big-play-button {
+  width: 70px !important;
+  height: 70px !important;
+  background: none !important;
+  line-height: 70px !important;
+  font-size: 80px !important;
+  border: none !important;
+  top: 50% !important;
+  left: 50% !important;
+  margin-top: -35px;
+  margin-left: -35px;
+}
+.offline {
+  display: block;
+  width: 5px;
+  height: 5px;
+  background: red;
+  border-radius: 50%;
+  position: fixed;
+  z-index: 2147483647;
+  right: 18px;
+  top: 18px;
+  box-shadow: 0 0 10px 13px red;
+}
