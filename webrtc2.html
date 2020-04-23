@@ -52,7 +52,7 @@
       }
     }
     user() {
-      this.conn.ondatachannel = () => {
+      this.conn.ondatachannel = (event) => {
         this.channel = event.channel;
         // this.channel.onmessage = userMessage;
         this.channel.onopen = createUserScreen(); // Connected to host
