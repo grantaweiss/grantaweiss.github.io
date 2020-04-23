@@ -1,0 +1,312 @@
+<html>
+<head>
+</head>
+<body>
+<script src="https://www.gstatic.com/firebasejs/7.14.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/7.14.1/firebase-database.js"></script>
+
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyDTIlxZikBc1K07YKo8phfxYT-xDpvCMb0",
+    authDomain: "myptp-f79fb.firebaseapp.com",
+    databaseURL: "https://myptp-f79fb.firebaseio.com",
+    projectId: "myptp-f79fb",
+    storageBucket: "myptp-f79fb.appspot.com",
+    messagingSenderId: "509346938413",
+    appId: "1:509346938413:web:810e82cf96bc344d1702a4"
+  };
+  firebase.initializeApp(firebaseConfig);
+  var roomID = null;
+
+  // http://numb.viagenie.ca/
+  var servers = {'iceServers': [{'urls': 'stun:stun.services.mozilla.com'}, {'urls': 'stun:stun.l.google.com:19302'}, {'urls': 'turn:numb.viagenie.ca','credential': 'pepper','username': 'weissman258@aim.com'}]};
+
+  class dataConn {
+    static connectionList = [];
+
+    constructor(key, role) {
+      dataConn.connectionList.push(this);
+      this.key = key;
+      this.role = role;
+      this.userDB = firebase.database().ref("room" + roomID + "/" + this.key + "/");
+      this.conn = new RTCPeerConnection(servers);
+      this.conn.onicecandidate = evt => this.sendCand(evt);
+      this.candInd = 0;
+      if(this.role == "host") {
+        this.host();
+      } else {
+        this.user();
+      }
+    }
+    addCand(snapshot) {
+      if(!snapshot.val()) return
+      let newCand = new RTCIceCandidate(JSON.parse(snapshot.val()));
+      this.conn.addIceCandidate(newCand)
+        .catch(e => console.log("Failure during addIceCandidate(): " + e.name));
+    }
+    sendCand(evt) {
+      if(evt.candidate) {
+        let newEntry = {};
+        newEntry[this.candInd++] = JSON.stringify(evt.candidate);
+        this.userDB.child(this.role).update(newEntry);
+      }
+    }
+    user() {
+      this.conn.ondatachannel = function() {
+        this.channel = event.channel;
+        // this.channel.onmessage = userMessage;
+        // this.channel.onopen = ; // Connected to host
+        // this.channel.onopen = ; // Disconnected from host
+      };
+      new Promise((resolve,reject) => {this.userDB.child("offer").on('value', data => {if(data.val()) resolve(data)})})
+        .then(data => this.conn.setRemoteDescription(JSON.parse(data.val())))
+        .then(() => this.conn.createAnswer())
+        .then(answer => this.conn.setLocalDescription(answer))
+        .then(() => this.userDB.update({answer: JSON.stringify(this.conn.localDescription)}))
+        .then(() => this.userDB.child("host").on('child_added', data => this.addCand(data)))
+        .catch((err) => console.log(err));
+    }
+    host() {
+      this.channel = this.conn.createDataChannel("chat");
+      this.channel.onopen = () => new user(this); // This user has connected
+      // this.channel.onclose = ; // This user has disconnected
+      this.conn.createOffer()
+        .then(offer => this.conn.setLocalDescription(offer))
+        .then(() => this.userDB.set({offer: JSON.stringify(this.conn.localDescription)}))
+        .then(() => new Promise((resolve,reject) => this.userDB.child("answer").on('value', data => {if(data.val()) resolve(data)})))
+        .then(data => this.conn.setRemoteDescription(JSON.parse(data.val())))
+        .then(() => this.userDB.child("user").on('child_added', data => this.addCand(data)))
+        .catch((err) => console.log(err));
+    }
+  }
+
+  class user {
+    static userList = [];
+    static userEl = null;
+
+    constructor(myDataConn) {
+      user.userList.push(this);
+      this.key = myDataConn.key;
+      this.conn = myDataConn.conn;
+      this.channel = myDataConn.channel;
+      user.userContainerGUI();
+      this.chatEl = this.userGUI();
+      this.channel.onmessage = (msg) => this.message(msg);
+      this.channel.onopen = () => this.chatEl.classList.add("online");
+      this.conn.onconnectionstatechange = (evt) => this.connectionChange();
+      this.channel.onclose = () => this.chatEl.classList.remove("online");
+    }
+    static userContainerGUI() {
+      if(!user.userEl) {
+        user.userEl = document.createElement("div");
+        user.userEl.id = "users";
+        document.body.appendChild(user.userEl);
+      }
+    }
+    userGUI() {
+      let newUser = document.createElement("div");
+      newUser.innerText = "1";
+      user.userEl.appendChild(newUser);
+      newUser.classList.add("online");
+      return newUser;
+    }
+    message(msg) {
+      let newMsg = document.createElement("div");
+      newMsg.innerText = msg.data;
+      this.chatEl.appendChild(newMsg);
+    }
+    connectionChange() {
+      let status = this.conn.connectionState;
+      if(status == "disconnected" || status == "failed" || status == "closed") {
+        this.chatEl.classList.remove("online")
+      } else if(status == "connected") {
+        this.chatEl.classList.add("online")
+      }
+    }
+  }
+
+  async function createRoom() {
+    const dbRef = firebase.database().ref();
+    let dupError = false;
+    do {
+      dupError = false;
+      roomID = String(Math.floor(Math.random()*10000)).padStart(4, '0');
+      const snapshot = await dbRef.child("room" + roomID + "/active").once('value');
+      if (snapshot.val()) {
+        dupError = true;
+      }
+    } while(dupError);
+    dbRef.child("room" + roomID).set({active:true});
+    urlParams.set('host', roomID);
+    // location.search = urlParams.toString();
+    window.history.replaceState(null, null, 'http:/asdnaskld.com/page2.php');
+  }
+
+  function hostGUI() {
+    let topBar = document.createElement("div");
+    topBar.id = "topBar";
+    // topBar.innerText = "Room: " + roomID;
+          let link = document.createElement("a");
+          link.href = "?room=" + roomID;
+          link.target = "_blank";
+          link.innerText = "Room: " + roomID;
+          topBar.appendChild(link);
+    document.body.appendChild(topBar);
+  }
+
+  function hostRoom() {
+    createRoom();
+    hostGUI();
+    firebase.database().ref("room" + roomID + "/").on('child_added', data => {if(data.key!="active"){new dataConn(data.key, "host");}});
+  }
+
+  function joinRoom(myID) {
+    roomID = myID;
+    let myKey = firebase.database().ref("room" + roomID + "/").push({0:0}).key;
+    new dataConn(myKey, "user");
+  }
+
+  function setCookie(cname,cvalue) {
+    document.cookie = cname + "=" + cvalue + ";";
+  }
+
+  function getCookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for(var i = 0; i < ca.length; i++) {
+      var c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
+
+  function newScreen() {
+    let newDiv = document.createElement("div");
+    newDiv.id = "newScreen";
+    let hostDiv = document.createElement("div");
+    let joinDiv = document.createElement("div");
+    let hostButton = document.createElement("button");
+    hostButton.innerText = "Host a Game";
+    hostButton.onclick = () => location.href = "?host=new";
+    let userInput = document.createElement("input");
+    userInput.type = "text";
+    let userSubmit = document.createElement("input");
+    userSubmit.type = "submit";
+    userSubmit.value = "Join a Game"
+    hostDiv.appendChild(hostButton);
+    joinDiv.appendChild(userInput);
+    joinDiv.appendChild(userSubmit);
+    newDiv.appendChild(hostDiv);
+    newDiv.appendChild(joinDiv);
+    document.body.appendChild(newDiv);
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  let urlRoom = urlParams.get('room');
+  let urlHost = urlParams.get('host');
+  let cookieRoom = getCookie("room");
+  let cookieHost = getCookie("host");
+  let cookieKey = getCookie("myKey");
+
+  if(getCookie("room") == urlRoom && urlRoom != "") {
+    // Tried to join this room before
+    if(getCookie("myKey") != "") {
+      // Is currently in the game
+      resumeUser(cookieRoom, cookieKey);
+    } else {
+      // Never joined the game, trying again
+      joinRoom(urlRoom);
+    }
+  } else if(getCookie("host") == urlHost && urlHost != "") {
+    // Is currently hosting the game
+    resumeHost(cookieHost);
+  } else if(urlRoom) {
+    // Join this room
+    joinRoom(urlRoom);
+  } else if(urlHost) {
+    // Host new room
+    hostRoom();
+  } else {
+    // Hey hey, let's find out what you wanna do
+    newScreen();
+  }
+</script>
+<style>
+body {
+  margin:0;
+  font-family: sans-serif;
+  background: whitesmoke;
+}
+#topBar {
+  background: #4dd0e1;
+  padding: 10px;
+  font-size: 1.5em;
+  text-align: center;
+}
+#users {
+  background:#ffcdd2;
+  display: grid;
+  grid-auto-flow: column;
+}
+#users > div {
+  margin:10px;
+  background:red;
+}
+#users > div.online {
+  background:green;
+}
+#newScreen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  min-width: max-content;
+  width: 30vw;
+  margin: auto;
+}
+#newScreen > div {
+  padding: 2vw;
+  background: #00BCD4;
+  width: -webkit-fill-available;
+  text-align: center;
+}
+#newScreen > div:first-of-type {
+  background: #FFC107;
+}
+#newScreen input[type="text"] {
+  display: block;
+  font-size: 1.5em;
+  padding: 5px;
+  -webkit-appearance: none;
+  margin: 0 auto 4% auto;
+  border: 2px solid #9c27b0;
+}
+#newScreen input[type="text"]:focus {
+  outline: 0;
+}
+#newScreen button, #newScreen input[type="submit"] {
+  -webkit-appearance: none;
+  padding: 0.7vw 2vw;
+  font-size: 1.5em;
+  border: 2px solid #9c27b0;
+  color: #9c27b0;
+  font-weight: bold;
+  cursor: pointer;
+}
+#newScreen button:hover, #newScreen input[type="submit"]:hover {
+  background: #9c27b0;
+  color: white;
+}
+#newScreen button:focus, #newScreen input[type="submit"]:focus {
+  outline: 0;
+}
+</style>
+</body>
+</html>
