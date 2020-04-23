@@ -22,8 +22,6 @@
   var servers = {'iceServers': [{'urls': 'stun:stun.services.mozilla.com'}, {'urls': 'stun:stun.l.google.com:19302'}, {'urls': 'turn:numb.viagenie.ca','credential': 'pepper','username': 'weissman258@aim.com'}]};
 
   class dataConn {
-    static connectionList = [];
-
     constructor(key, role) {
       dataConn.connectionList.push(this);
       this.key = key;
@@ -78,12 +76,11 @@
         .then(() => this.userDB.child("user").on('child_added', data => this.addCand(data)))
         .catch((err) => console.log(err));
     }
+
+    static connectionList = [];
   }
 
   class user {
-    static userList = [];
-    static userEl = null;
-
     constructor(myDataConn) {
       user.userList.push(this);
       this.key = myDataConn.key;
@@ -123,6 +120,9 @@
         this.chatEl.classList.add("online")
       }
     }
+
+    static userList = [];
+    static userEl = null;
   }
 
   async function createRoom() {
