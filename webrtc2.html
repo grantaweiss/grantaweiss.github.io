@@ -138,8 +138,7 @@
     } while(dupError);
     dbRef.child("room" + roomID).set({active:true});
     urlParams.set('host', roomID);
-    // location.search = urlParams.toString();
-    window.history.replaceState(null, null, 'http:/asdnaskld.com/page2.php');
+    window.history.replaceState(null, null, "?" + urlParams.toString());
   }
 
   function hostGUI() {
