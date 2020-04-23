@@ -52,10 +52,10 @@
       }
     }
     user() {
-      this.conn.ondatachannel = function() {
+      this.conn.ondatachannel = () => {
         this.channel = event.channel;
         // this.channel.onmessage = userMessage;
-        // this.channel.onopen = ; // Connected to host
+        this.channel.onopen = createUserScreen(); // Connected to host
         // this.channel.onopen = ; // Disconnected from host
       };
       new Promise((resolve,reject) => {this.userDB.child("offer").on('value', data => {if(data.val()) resolve(data)})})
@@ -105,7 +105,7 @@
     }
     userGUI() {
       let newUser = document.createElement("div");
-      newUser.innerText = "1";
+      newUser.innerText = "Guest " + user.userList.length;
       user.userEl.appendChild(newUser);
       newUser.classList.add("online");
       return newUser;
@@ -153,6 +153,19 @@
     document.body.appendChild(topBar);
   }
 
+  function createUserScreen() {
+    let newForm = document.createElement("form");
+    let newInput = document.createElement("input");
+    let newSubmit = document.createElement("input");
+    newInput.type = "text";
+    newSubmit.type = "submit";
+    newSubmit.value = "Send Message";
+    newForm.appendChild(newInput);
+    newForm.appendChild(newSubmit);
+    document.body.appendChild(newForm);
+    newForm.addEventListener("submit", event => {dataConn.connectionList[0].channel.send(newInput.value);newInput.value="";event.preventDefault();return false;});
+  }
+
   function hostRoom() {
     createRoom();
     hostGUI();
@@ -193,14 +206,19 @@
     let hostButton = document.createElement("button");
     hostButton.innerText = "Host a Game";
     hostButton.onclick = () => location.href = "?host=new";
+    let newForm = document.createElement("form");
+    newForm.method = "get";
     let userInput = document.createElement("input");
     userInput.type = "text";
+    userInput.name = "room";
     let userSubmit = document.createElement("input");
     userSubmit.type = "submit";
     userSubmit.value = "Join a Game"
+    userSubmit.onsubmit = "Join a Game"
     hostDiv.appendChild(hostButton);
-    joinDiv.appendChild(userInput);
-    joinDiv.appendChild(userSubmit);
+    joinDiv.appendChild(newForm);
+    newForm.appendChild(userInput);
+    newForm.appendChild(userSubmit);
     newDiv.appendChild(hostDiv);
     newDiv.appendChild(joinDiv);
     document.body.appendChild(newDiv);
@@ -255,10 +273,13 @@ body {
 }
 #users > div {
   margin:10px;
-  background:red;
+  border: 2px solid red;
+  background: white;
+  padding: 10px;
+  font-size: 1.3em;
 }
 #users > div.online {
-  background:green;
+  border: 2px solid green;
 }
 #newScreen {
   display: flex;
@@ -278,6 +299,9 @@ body {
 }
 #newScreen > div:first-of-type {
   background: #FFC107;
+}
+#newScreen form {
+  margin: 0;
 }
 #newScreen input[type="text"] {
   display: block;
