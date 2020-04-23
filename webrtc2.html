@@ -17,13 +17,17 @@
   };
   firebase.initializeApp(firebaseConfig);
   var roomID = null;
+  var dataConnectionList = [];
+  var userList = [];
 
   // http://numb.viagenie.ca/
   var servers = {'iceServers': [{'urls': 'stun:stun.services.mozilla.com'}, {'urls': 'stun:stun.l.google.com:19302'}, {'urls': 'turn:numb.viagenie.ca','credential': 'pepper','username': 'weissman258@aim.com'}]};
 
   class dataConn {
+      // static connectionList = [];
+
     constructor(key, role) {
-      dataConn.connectionList.push(this);
+      dataConnectionList.push(this);
       this.key = key;
       this.role = role;
       this.userDB = firebase.database().ref("room" + roomID + "/" + this.key + "/");
@@ -76,13 +80,12 @@
         .then(() => this.userDB.child("user").on('child_added', data => this.addCand(data)))
         .catch((err) => console.log(err));
     }
-
-    static connectionList = [];
   }
 
   class user {
+    // static userList = [];
     constructor(myDataConn) {
-      user.userList.push(this);
+      userList.push(this);
       this.key = myDataConn.key;
       this.conn = myDataConn.conn;
       this.channel = myDataConn.channel;
@@ -94,16 +97,18 @@
       this.channel.onclose = () => this.chatEl.classList.remove("online");
     }
     static userContainerGUI() {
-      if(!user.userEl) {
-        user.userEl = document.createElement("div");
-        user.userEl.id = "users";
-        document.body.appendChild(user.userEl);
+      let userEl = document.getElementById("users");
+      if(!userEl) {
+        userEl = document.createElement("div");
+        userEl.id = "users";
+        document.body.appendChild(userEl);
       }
     }
     userGUI() {
+      let userEl = document.getElementById("users");
       let newUser = document.createElement("div");
-      newUser.innerText = "Guest " + user.userList.length;
-      user.userEl.appendChild(newUser);
+      newUser.innerText = "Guest " + userList.length;
+      userEl.appendChild(newUser);
       newUser.classList.add("online");
       return newUser;
     }
@@ -120,9 +125,6 @@
         this.chatEl.classList.add("online")
       }
     }
-
-    static userList = [];
-    static userEl = null;
   }
 
   async function createRoom() {
@@ -163,7 +165,7 @@
     newForm.appendChild(newInput);
     newForm.appendChild(newSubmit);
     document.body.appendChild(newForm);
-    newForm.addEventListener("submit", event => {dataConn.connectionList[0].channel.send(newInput.value);newInput.value="";event.preventDefault();return false;});
+    newForm.addEventListener("submit", event => {dataConnectionList[0].channel.send(newInput.value);newInput.value="";event.preventDefault();return false;});
   }
 
   function hostRoom() {
