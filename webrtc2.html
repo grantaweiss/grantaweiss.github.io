@@ -24,21 +24,15 @@
   var servers = {'iceServers': [{'urls': 'stun:stun.services.mozilla.com'}, {'urls': 'stun:stun.l.google.com:19302'}, {'urls': 'turn:numb.viagenie.ca','credential': 'pepper','username': 'weissman258@aim.com'}]};
 
   class dataConn {
-      // static connectionList = [];
-
-    constructor(key, role) {
+    // static connectionList = [];
+    constructor(key) {
       dataConnectionList.push(this);
       this.key = key;
-      this.role = role;
       this.userDB = firebase.database().ref("room" + roomID + "/" + this.key + "/");
       this.conn = new RTCPeerConnection(servers);
       this.conn.onicecandidate = evt => this.sendCand(evt);
       this.candInd = 0;
-      if(this.role == "host") {
-        this.host();
-      } else {
-        this.user();
-      }
+      this.initialize();
     }
     addCand(snapshot) {
       if(!snapshot.val()) return
@@ -53,7 +47,13 @@
         this.userDB.child(this.role).update(newEntry);
       }
     }
-    user() {
+  }
+  class userDataConn extends dataConn {
+    constructor(key) {
+      super(key);
+      this.role = "user";
+    }
+    initialize() {
       this.conn.ondatachannel = (event) => {
         this.channel = event.channel;
         // this.channel.onmessage = userMessage;
@@ -68,7 +68,13 @@
         .then(() => this.userDB.child("host").on('child_added', data => this.addCand(data)))
         .catch((err) => console.log(err));
     }
-    host() {
+  }
+  class hostDataConn extends dataConn {
+    constructor(key) {
+      super(key);
+      this.role = "host";
+    }
+    initialize() {
       this.channel = this.conn.createDataChannel("chat");
       this.channel.onopen = () => new user(this); // This user has connected
       // this.channel.onclose = ; // This user has disconnected
@@ -81,7 +87,6 @@
         .catch((err) => console.log(err));
     }
   }
-
   class user {
     // static userList = [];
     constructor(myDataConn) {
@@ -171,13 +176,13 @@
   function hostRoom() {
     createRoom();
     hostGUI();
-    firebase.database().ref("room" + roomID + "/").on('child_added', data => {if(data.key!="active"){new dataConn(data.key, "host");}});
+    firebase.database().ref("room" + roomID + "/").on('child_added', data => {if(data.key!="active"){new hostDataConn(data.key);}});
   }
 
   function joinRoom(myID) {
     roomID = myID;
     let myKey = firebase.database().ref("room" + roomID + "/").push({0:0}).key;
-    new dataConn(myKey, "user");
+    new userDataConn(myKey);
   }
 
   function setCookie(cname,cvalue) {
@@ -257,81 +262,81 @@
   }
 </script>
 <style>
-body {
-  margin:0;
-  font-family: sans-serif;
-  background: whitesmoke;
-}
-#topBar {
-  background: #4dd0e1;
-  padding: 10px;
-  font-size: 1.5em;
-  text-align: center;
-}
-#users {
-  background:#ffcdd2;
-  display: grid;
-  grid-auto-flow: column;
-}
-#users > div {
-  margin:10px;
-  border: 2px solid red;
-  background: white;
-  padding: 10px;
-  font-size: 1.3em;
-}
-#users > div.online {
-  border: 2px solid green;
-}
-#newScreen {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  align-items: center;
-  justify-content: center;
-  min-width: max-content;
-  width: 30vw;
-  margin: auto;
-}
-#newScreen > div {
-  padding: 2vw;
-  background: #00BCD4;
-  width: -webkit-fill-available;
-  text-align: center;
-}
-#newScreen > div:first-of-type {
-  background: #FFC107;
-}
-#newScreen form {
-  margin: 0;
-}
-#newScreen input[type="text"] {
-  display: block;
-  font-size: 1.5em;
-  padding: 5px;
-  -webkit-appearance: none;
-  margin: 0 auto 4% auto;
-  border: 2px solid #9c27b0;
-}
-#newScreen input[type="text"]:focus {
-  outline: 0;
-}
-#newScreen button, #newScreen input[type="submit"] {
-  -webkit-appearance: none;
-  padding: 0.7vw 2vw;
-  font-size: 1.5em;
-  border: 2px solid #9c27b0;
-  color: #9c27b0;
-  font-weight: bold;
-  cursor: pointer;
-}
-#newScreen button:hover, #newScreen input[type="submit"]:hover {
-  background: #9c27b0;
-  color: white;
-}
-#newScreen button:focus, #newScreen input[type="submit"]:focus {
-  outline: 0;
-}
+  body {
+    margin:0;
+    font-family: sans-serif;
+    background: whitesmoke;
+  }
+  #topBar {
+    background: #4dd0e1;
+    padding: 10px;
+    font-size: 1.5em;
+    text-align: center;
+  }
+  #users {
+    background:#ffcdd2;
+    display: grid;
+    grid-auto-flow: column;
+  }
+  #users > div {
+    margin:10px;
+    border: 2px solid red;
+    background: white;
+    padding: 10px;
+    font-size: 1.3em;
+  }
+  #users > div.online {
+    border: 2px solid green;
+  }
+  #newScreen {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    min-width: max-content;
+    width: 30vw;
+    margin: auto;
+  }
+  #newScreen > div {
+    padding: 2vw;
+    background: #00BCD4;
+    width: -webkit-fill-available;
+    text-align: center;
+  }
+  #newScreen > div:first-of-type {
+    background: #FFC107;
+  }
+  #newScreen form {
+    margin: 0;
+  }
+  #newScreen input[type="text"] {
+    display: block;
+    font-size: 1.5em;
+    padding: 5px;
+    -webkit-appearance: none;
+    margin: 0 auto 4% auto;
+    border: 2px solid #9c27b0;
+  }
+  #newScreen input[type="text"]:focus {
+    outline: 0;
+  }
+  #newScreen button, #newScreen input[type="submit"] {
+    -webkit-appearance: none;
+    padding: 0.7vw 2vw;
+    font-size: 1.5em;
+    border: 2px solid #9c27b0;
+    color: #9c27b0;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  #newScreen button:hover, #newScreen input[type="submit"]:hover {
+    background: #9c27b0;
+    color: white;
+  }
+  #newScreen button:focus, #newScreen input[type="submit"]:focus {
+    outline: 0;
+  }
 </style>
 </body>
 </html>
