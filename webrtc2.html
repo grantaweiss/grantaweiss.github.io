@@ -57,7 +57,7 @@
       this.conn.ondatachannel = (event) => {
         this.channel = event.channel;
         // this.channel.onmessage = userMessage;
-        this.channel.onopen = createUserScreen(); // Connected to host
+        this.channel.onopen = userDataConn.createGUI; // Connected to host
         // this.channel.onopen = ; // Disconnected from host
       };
       new Promise((resolve,reject) => {this.userDB.child("offer").on('value', data => {if(data.val()) resolve(data)})})
@@ -67,6 +67,18 @@
         .then(() => this.userDB.update({answer: JSON.stringify(this.conn.localDescription)}))
         .then(() => this.userDB.child("host").on('child_added', data => this.addCand(data)))
         .catch((err) => console.log(err));
+    }
+    static createGUI() {
+      let newForm = document.createElement("form");
+      let newInput = document.createElement("input");
+      let newSubmit = document.createElement("input");
+      newInput.type = "text";
+      newSubmit.type = "submit";
+      newSubmit.value = "Send Message";
+      newForm.appendChild(newInput);
+      newForm.appendChild(newSubmit);
+      document.body.appendChild(newForm);
+      newForm.addEventListener("submit", event => {dataConnectionList[0].channel.send(newInput.value);newInput.value="";event.preventDefault();return false;});
     }
   }
   class hostDataConn extends dataConn {
@@ -112,7 +124,9 @@
     userGUI() {
       let userEl = document.getElementById("users");
       let newUser = document.createElement("div");
-      newUser.innerText = "Guest " + userList.length;
+      let userText = document.createElement("h3");
+      userText.innerText = "Guest " + userList.length;
+      newUser.appendChild(userText);
       userEl.appendChild(newUser);
       newUser.classList.add("online");
       return newUser;
@@ -158,19 +172,6 @@
           link.innerText = "Room: " + roomID;
           topBar.appendChild(link);
     document.body.appendChild(topBar);
-  }
-
-  function createUserScreen() {
-    let newForm = document.createElement("form");
-    let newInput = document.createElement("input");
-    let newSubmit = document.createElement("input");
-    newInput.type = "text";
-    newSubmit.type = "submit";
-    newSubmit.value = "Send Message";
-    newForm.appendChild(newInput);
-    newForm.appendChild(newSubmit);
-    document.body.appendChild(newForm);
-    newForm.addEventListener("submit", event => {dataConnectionList[0].channel.send(newInput.value);newInput.value="";event.preventDefault();return false;});
   }
 
   function hostRoom() {
@@ -287,6 +288,22 @@
   }
   #users > div.online {
     border: 2px solid green;
+  }
+  #users h3 {
+    margin:0;
+  }
+  #users h3:after {
+    content: 'A';
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 20px;
+    line-height: 32px;
+    text-align: center;
+    color: #3949ab;
+    background: linear-gradient(45deg, #BA68C8, #F44336);
+    position: absolute;
+    box-shadow: 3px 3px 10px -5px black;
   }
   #newScreen {
     display: flex;
