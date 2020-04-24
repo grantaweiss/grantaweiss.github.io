@@ -25,7 +25,7 @@
   var servers = {'iceServers': [{'urls': 'stun:stun.services.mozilla.com'}, {'urls': 'stun:stun.l.google.com:19302'}, {'urls': 'turn:numb.viagenie.ca','credential': 'pepper','username': 'weissman258@aim.com'}]};
 
   class dataConn {
-    static connectionList = [];
+    static #connectionList = [];
     constructor(key) {
       dataConn.connectionList.push(this);
       this.key = key;
