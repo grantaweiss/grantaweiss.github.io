@@ -1,8 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <title>WebRTC Stuff</title>
 </head>
 <body>
+  <div id="topBar"></div>
+  <div id="contents"></div>
 <script src="https://www.gstatic.com/firebasejs/7.14.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/7.14.1/firebase-database.js"></script>
 
@@ -74,7 +77,7 @@
     }
     initialize() {
       this.channel = this.conn.createDataChannel("chat");
-      this.channel.onopen = () => new user(this);
+      this.channel.onopen = () => new player(this);
       this.conn.createOffer()
         .then(offer => this.conn.setLocalDescription(offer))
         .then(() => this.userDB.set({offer: JSON.stringify(this.conn.localDescription)}))
@@ -84,48 +87,59 @@
         .catch((err) => console.log(err));
     }
   }
-  class user { // exists on host end
+  class player {
     constructor(myDataConn) {
-      user.userList.push(this);
+      player.userList.push(this);
+      player.userContainerGUI();
       if(myDataConn == "self") {
         this.conn = "self"
       } else {
+        if(myDataConn.role == "host") {
+          game.initialize();
+        }
         this.conn = myDataConn.conn;
         this.channel = myDataConn.channel;
+        this.channel.onmessage = msg => this.decodeMessage(msg.data);
+        this.channel.onopen = () => this.chatEl.classList.add("online");
+        this.conn.onconnectionstatechange = (evt) => this.connectionChange();
+        this.channel.onclose = () => this.chatEl.classList.remove("online");
       }
-      user.userContainerGUI();
       this.chatEl = this.userGUI();
-      this.channel.onmessage = msg => this.decodeMessage(msg);
-      this.channel.onopen = () => this.chatEl.classList.add("online");
-      this.conn.onconnectionstatechange = (evt) => this.connectionChange();
-      this.channel.onclose = () => this.chatEl.classList.remove("online");
-      game.initialize();
     }
     static userContainerGUI() {
       let userEl = document.getElementById("users");
       if(!userEl) {
         userEl = document.createElement("div");
         userEl.id = "users";
-        document.body.appendChild(userEl);
+        document.getElementById("contents").appendChild(userEl);
       }
     }
     userGUI() {
       let userEl = document.getElementById("users");
       let newUser = document.createElement("div");
       let userText = document.createElement("h3");
-      userText.innerText = "Guest " + user.userList.length;
+      let displayName = "Guest " + (player.userList.length - 1);
+      if(player.userList.length == 1) {
+        displayName = "Me";
+      }
+      userText.innerText = displayName;
       newUser.appendChild(userText);
       userEl.appendChild(newUser);
       newUser.classList.add("online");
       return newUser;
     }
     decodeMessage(msg) {
-      let msgDecode = JSON.parse(msg.data);
+      let msgDecode = JSON.parse(msg);
       if(msgDecode.task == "setName") {
         this.chatEl.getElementsByTagName("h3")[0].innerText = msgDecode.value;
+      } else if(msgDecode.task == "deal") {
+        let newMsg = document.createElement("div");
+        newMsg.innerText = msgDecode.value.value;
+        newMsg.style.background = msgDecode.value.color;
+        this.chatEl.appendChild(newMsg);
       } else {
         let newMsg = document.createElement("div");
-        newMsg.innerText = msg.data;
+        newMsg.innerText = msg;
         this.chatEl.appendChild(newMsg);
       }
     }
@@ -139,53 +153,13 @@
     }
     sendMessage(msg) {
       if(this.conn == "self") {
-        // decodeMessage(...)
+        this.decodeMessage(JSON.stringify(msg));
       } else {
         this.channel.send(JSON.stringify(msg));
       }
     }
   }
-  user.userList = [];
-
-  class player { // exists on client end
-    constructor(myDataConn) {
-      this.conn = myDataConn.conn;
-      this.channel = myDataConn.channel;
-      this.state = "idle";
-      this.channel.onmessage = msg => this.decodeMessage(msg);
-      // this.channel.onopen = () => this.chatEl.classList.add("online"); // Channel opened
-      // this.conn.onconnectionstatechange = (evt) => this.connectionChange(); // Connection state change
-      // this.channel.onclose = () => this.chatEl.classList.remove("online"); // Channel closed
-      this.createGUI();
-    }
-    createGUI() {
-      let newForm = document.createElement("form");
-      let newInput = document.createElement("input");
-      let newSubmit = document.createElement("input");
-      newInput.type = "text";
-      newSubmit.type = "submit";
-      newSubmit.value = "Send Message";
-      newForm.appendChild(newInput);
-      newForm.appendChild(newSubmit);
-      document.body.appendChild(newForm);
-      newForm.onsubmit = () => {this.sendMessage({"task":"setName","value":newInput.value});newInput.value="";return false;};
-    }
-    sendMessage(msg) {
-      this.channel.send(JSON.stringify(msg));
-    }
-    decodeMessage(msg) {
-      let msgDecode = JSON.parse(msg.data);
-      if(msgDecode.task == "pushDeck") {
-        // set the card that is at the top of everyones deck
-      } else if(msgDecode.task == "pushDiscard") {
-        // add to the discard pile
-      } else if(msgDecode.task == "popDiscard") {
-        // remove from the discard pile
-      } else {
-        console.log(msgDecode);
-      }
-    }
-  }
+  player.userList = [];
 
   class game { // on host end - runs the game
     constructor() {
@@ -202,17 +176,23 @@
     }
     startGame() {
       document.body.removeChild(this.startButton);
-      document.body.removeChild(document.getElementById("topBar"));
+      clearTopBar();
       firebase.database().ref("room" + roomID + "/").off(); // Do not allow new connections
       // dealCards
       this.dealCards();
       // start game loop
     }
     dealCards() {
-      user.userList.forEach(myUser => {
-        myUser.channel.send(JSON.stringify({"task":"deal","value":{"value":10,"color":"blue"}}));
+      player.userList.forEach(myUser => {
+        for(let i = 0; i < 10; i++) {
+          myUser.sendMessage({"task":"deal","value":{"value":Math.ceil(Math.random()*12),"color":"blue"}});
+        }
       });
-
+    }
+    sendAll(msg) {
+      player.userList.forEach(myUser => {
+        myUser.sendMessage(msg);
+      });
     }
   }
   game.init = false;
@@ -223,38 +203,43 @@
     do {
       dupError = false;
       roomID = String(Math.floor(Math.random()*10000)).padStart(4, '0');
-      const snapshot = await dbRef.child("room" + roomID + "/active").once('value');
-      if (snapshot.val()) {
+      try {
+        const snapshot = await dbRef.child("room" + roomID + "/time").once('value');
+        if (Date.now() < parseInt(snapshot.val()) + 600000) { // room hasn't expired
+          dupError = true;
+        }
+      } catch(e) {
+        console.log(e);
         dupError = true;
       }
     } while(dupError);
-    dbRef.child("room" + roomID).set({active:true});
+    dbRef.child("room" + roomID).set({time:Date.now()});
     urlParams.set('host', roomID);
     window.history.replaceState(null, null, "?" + urlParams.toString());
   }
 
   function hostGUI() {
-    let topBar = document.createElement("div");
-    topBar.id = "topBar";
+    let topBar = document.getElementById("topBar");
     // topBar.innerText = "Room: " + roomID;
           let link = document.createElement("a");
           link.href = "?room=" + roomID;
           link.target = "_blank";
           link.innerText = "Room: " + roomID;
           topBar.appendChild(link);
-    document.body.appendChild(topBar);
   }
 
   function hostRoom() {
     createRoom();
     hostGUI();
-    firebase.database().ref("room" + roomID + "/").on('child_added', data => {if(data.key!="active"){new hostDataConn(data.key);}});
+    new player("self");
+    firebase.database().ref("room" + roomID + "/").on('child_added', data => {if(data.key!="time"){new hostDataConn(data.key);}});
   }
 
   function joinRoom(myID) {
     roomID = myID;
-    let myKey = firebase.database().ref("room" + roomID + "/").push({0:0}).key;
-    new userDataConn(myKey);
+    let myKey = firebase.database().ref("room" + roomID + "/").push({0:0});
+    myKey.catch(err=>console.log(err));
+    new userDataConn(myKey.key);
   }
 
   function setCookie(cname,cvalue) {
@@ -300,7 +285,19 @@
     newForm.appendChild(userSubmit);
     newDiv.appendChild(hostDiv);
     newDiv.appendChild(joinDiv);
-    document.body.appendChild(newDiv);
+    document.getElementById("contents").appendChild(newDiv);
+  }
+
+  function clearTopBar() {
+    document.getElementById("topBar").classList.add("emptying");
+    setTimeout(() => {clearDOM("topBar");document.getElementById("topBar").classList.remove("emptying");}, 2000);
+  }
+
+  function clearDOM(elem) {
+    if(typeof elem == "string") elem = document.getElementById(elem);
+    while (elem.firstChild) {
+      elem.firstChild.remove();
+    }
   }
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -334,31 +331,72 @@
   }
 </script>
 <style>
+  html {
+    height:100%;
+    overflow: hidden;
+  }
   body {
     margin:0;
+    height: 100%;
     font-family: sans-serif;
     background: whitesmoke;
+    display: flex;
+    flex-direction: column;
+  }
+  #contents {
+    border-width: 5px 0;
+    border-color: #e0e0e0;
+    border-style: solid;
+    height:100%;
   }
   #topBar {
-    background: #4dd0e1;
-    padding: 10px;
+    background: #29d7d7;
     font-size: 1.5em;
     text-align: center;
+    flex-shrink: 0.1;
+    transition: flex-shrink 2s;
+  }
+  #topBar :first-child {
+    margin-top: 10px;
+    display: block;
+  }
+  #topBar :last-child {
+    margin-bottom: 10px;
+    display: block;
+  }
+  #topBar.emptying {
+    flex-shrink: 100;
+    overflow: hidden;
+  }
+  #topBar a {
+    text-decoration: none;
+    color: #425870;
   }
   #users {
-    background:#ffcdd2;
-    display: grid;
-    grid-auto-flow: column;
+    /* background:#ffcdd2; */
+    /* display: grid;
+    grid-auto-flow: column; */
   }
   #users > div {
     margin:10px;
-    border: 2px solid red;
+    border: 2px solid #D64A3E;
     background: white;
-    padding: 10px;
+    padding: 10px 40px 10px 10px;
+    display: inline-block;
     font-size: 1.3em;
+    border-radius: 12px;
+    cursor: default;
+    transition: box-shadow 0.5s cubic-bezier(0.55, 0.06, 0.68, 0.19);
+    box-shadow: 5px 4px 9px #b5b5b58c;
+  }
+  #users > div:hover {
+    box-shadow: 5px 4px #D64A3E;
   }
   #users > div.online {
-    border: 2px solid green;
+    border: 2px solid #1ED66E;
+  }
+  #users > div.online:hover {
+    box-shadow: 5px 4px #1ED66E;
   }
   #users h3 {
     margin:0;
@@ -379,7 +417,8 @@
   #newScreen {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: -webkit-fill-available;
+    height: stretch;
     align-items: center;
     justify-content: center;
     min-width: max-content;
