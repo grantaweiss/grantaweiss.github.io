@@ -1,0 +1,292 @@
+html, body {
+  height: 100%;
+  margin:0;
+}
+body {
+  box-sizing:border-box;
+  background: #ddd;
+  font-family:Sans-Serif;
+  overflow:hidden;
+}
+#dock {
+  width: 100%;
+  height: 21vw;
+  bottom: 0;
+  position: fixed;
+  background: #90969e;
+  box-shadow: 0 4px 20px 0px black;
+}
+#buttonBar {
+  height: 3.5vw;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  background:white;
+  box-shadow: inset 0px -17px 5px -15px black;
+}
+#handScore {
+  align-self: flex-end;
+  margin-bottom: 4px;
+  font-size: 1.5vw;
+  margin-right: 1vw;
+}
+#dock button {
+  -webkit-appearance: none;
+  height: calc(92% - 10px);
+  margin: 5px 2px;
+  padding: 0 32px;
+  border: 3px solid #0392d0;
+  background-color: #0392d0;
+  color: white;
+  font-size: .8vw;
+  font-weight: bold;
+  cursor: pointer;
+  transition-duration: 0.4s;
+  z-index: 2;
+}
+#dock button:hover {
+  background: #ffffff00;
+  border: 3px solid #0392d0;
+  color: #0392d0;
+}
+#dock button:focus {
+  outline:0;
+}
+#fakePile {
+  z-index: -1;
+  background:red;
+  overflow:hidden;
+}
+#fakePile:after {
+  content: '';
+  height:100%;
+  width:100%;
+  background-image: url("/Users/grantweiss/Downloads/PhotoFunia-1587283094 Cropped.jpg");
+  transform: scale3d(1,-1,1);
+  background-size: contain;
+  background-repeat: no-repeat;
+  display: block;
+}
+.fakeCard {
+  width: calc(10vw - 5px);
+  height: calc(14vw - 7px);
+  border-radius:.6vw;
+  background: #68676d3d;
+  position: absolute;
+  transform-origin: bottom;
+  box-shadow: inset 0 0 13px -7px black;
+}
+.fakeCard[data-slot='discard'] {
+  display: flex;
+  align-items: center;
+}
+.fakeCard[data-slot='discard'] svg {
+  height: 30%;
+  fill: #5a5a5a69;
+  transition: fill .5s;
+}
+.fakeCard[data-slot='discard']:hover svg {
+  fill: #5a5a5aa9;
+}
+.card, #fakePile {
+  width: calc(10vw - 5px);
+  height: calc(14vw - 7px);
+  border-radius:.6vw;
+  font-size:2vw;
+  position: absolute;
+  transition: transform 1s, margin 0.5s;
+  transform-style: preserve-3d;
+  transform-origin: top;
+  z-index:2;
+}
+.card[data-slot='discard'] {
+  z-index:3;
+}
+.card.dragging {
+  z-index: 4;
+}
+.card.hidden {
+  opacity: 0;
+  transition: transform 0s, margin 0.5s !important;
+  margin-top: -20px;
+}
+.innerCard {
+  height: 100%;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: margin 0.5s;
+}
+.card .front, .card .back {
+  background-size: contain;
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  position: absolute;
+}
+.card .back {
+  background-image: url("/Users/grantweiss/Downloads/PhotoFunia-1587283094 Cropped.jpg");
+  border-radius:.6vw;
+  transform: translateZ(-1px) scale3d(1,-1,1);
+}
+.card .front {
+  background-color: white;
+  border-radius:.6vw;
+  transform: translateZ(1px);
+}
+.card .front .container {
+  position:absolute;
+  left:5.25%;
+  top:3.75%;
+  width:89.5%;
+  height:92.5%;
+  background:white;
+  border-radius:.7vw;
+  overflow:hidden;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+/* Semi-Circles */
+.card .front .topArt, .card .front .botArt {
+  content:'';
+  display:block;
+  position:absolute;
+  width:150%;
+  height:120%;
+  border-radius:100%;
+}
+.card .front .topArt {
+  left:-93%;
+  top:-86%;
+}
+.card .front .botArt {
+  right:-93%;
+  bottom:-86%;
+}
+/* Semi-Circle Text */
+.card .front .topArt:after, .card .front .botArt:after {
+  position:absolute;
+  font-weight:bold;
+  color:white;
+  text-shadow:
+   -1px -1px 0 #00000066,
+    1px -1px 0 #00000066,
+    -1px 1px 0 #00000066,
+     1px 1px 0 #00000066;
+}
+.card .front .topArt:after {
+  left: 66%;
+  bottom: 11.8%;
+}
+.card .front .botArt:after {
+  right:6%;
+  bottom: 1.8%;
+  transform:rotate(180deg);
+}
+/* Face Text */
+.card .front .value {
+  font-size:2em;
+  font-weight:900;
+  text-shadow: -2px 2px 4px #00000036;
+}
+
+
+/* Face Text Value */
+.card[data-value='1'] .front .container :after {content:'1';}
+.card[data-value='2'] .front .container :after {content:'2';}
+.card[data-value='3'] .front .container :after {content:'3';}
+.card[data-value='4'] .front .container :after {content:'4';}
+.card[data-value='5'] .front .container :after {content:'5';}
+.card[data-value='6'] .front .container :after {content:'6';}
+.card[data-value='7'] .front .container :after {content:'7';}
+.card[data-value='8'] .front .container :after {content:'8';}
+.card[data-value='9'] .front .container :after {content:'9';}
+.card[data-value='10'] .front .container :after {content:'10';}
+.card[data-value='11'] .front .container :after {content:'11';}
+.card[data-value='12'] .front .container :after {content:'12';}
+.card[data-value='wild'] .front .container :after {content:'W';}
+.card[data-value='wild'] .front .value:after {content:'WILD';font-size:0.75em;}
+.card[data-value='skip'] .front .container :after {content:'S';}
+.card[data-value='skip'] .front .value:after {content:'SKIP';font-size:0.75em;}
+
+/* Face Text Color */
+.card[data-color='blue'] {color:blue;}
+.card[data-color='green'] {color:green;}
+.card[data-color='yellow'] {color:#ffec05;}
+.card[data-color='red'] {color:red;}
+
+/* Semi-Circle Color */
+.card[data-color='blue'] .front .topArt, .card[data-color='blue'] .front .botArt {background:blue;}
+.card[data-color='green'] .front .topArt, .card[data-color='green'] .front .botArt {background:green;}
+.card[data-color='yellow'] .front .topArt, .card[data-color='yellow'] .front .botArt {background:#ffec05;}
+.card[data-color='red'] .front .topArt, .card[data-color='red'] .front .botArt {background:red;}
+
+/* Wild Coloring */
+.card[data-value='wild'] .front :before {background:white;}
+.card[data-value='wild'] .front .value:after {color:white !important;}
+.card[data-value='wild'][data-color='blue'] .front .container :after {color:blue;}
+.card[data-value='wild'][data-color='blue'] .container {background:blue;}
+.card[data-value='wild'][data-color='green'] .front .container :after {color:green;}
+.card[data-value='wild'][data-color='green'] .container {background:green;}
+.card[data-value='wild'][data-color='yellow'] .front .container :after {color:#ffec05;}
+.card[data-value='wild'][data-color='yellow'] .container {background:yellow;}
+.card[data-value='wild'][data-color='red'] .front .container :after {color:red;}
+.card[data-value='wild'][data-color='red'] .container {background:red;}
+
+
+
+
+/* Card Positioning */
+[data-slot='stack'], #fakePile {
+  z-index:1;
+  transform: translate(10px, 10px) translate(0, 14vw) rotate3d(1, 0, 0, -180deg);
+}
+[data-slot='0'] {transform: translate(0, 100vh) translate(2px, -14.5vw);}
+[data-slot='1'] {transform: translate(10vw, 100vh) translate(2px, -14.5vw);}
+[data-slot='2'] {transform: translate(20vw, 100vh) translate(2px, -14.5vw);}
+[data-slot='3'] {transform: translate(30vw, 100vh) translate(2px, -14.5vw);}
+[data-slot='4'] {transform: translate(40vw, 100vh) translate(2px, -14.5vw);}
+[data-slot='5'] {transform: translate(50vw, 100vh) translate(2px, -14.5vw);}
+[data-slot='6'] {transform: translate(60vw, 100vh) translate(2px, -14.5vw);}
+[data-slot='7'] {transform: translate(70vw, 100vh) translate(2px, -14.5vw);}
+[data-slot='8'] {transform: translate(80vw, 100vh) translate(2px, -14.5vw);}
+[data-slot='9'] {transform: translate(90vw, 100vh) translate(2px, -14.5vw);}
+[data-slot='discard'] {transform: translate(90vw, 17px) translate(-5px, 0);}
+
+[data-slot='out0-0'] {transform: translate(11.75vw, 0px) translate(10px, 0vw) scale(0.75);transform-origin: center;z-index:2;}
+[data-slot='out0-1'] {transform: translate(14.75vw, 0px) translate(10px, 0vw) scale(0.75);transform-origin: center;z-index:3;}
+[data-slot='out0-2'] {transform: translate(17.75vw, 0px) translate(10px, 0vw) scale(0.75);transform-origin: center;z-index:4;}
+[data-slot='out0-3'] {transform: translate(20.75vw, 0px) translate(10px, 0vw) scale(0.75);transform-origin: center;z-index:5;}
+[data-slot='out0-4'] {transform: translate(23.75vw, 0px) translate(10px, 0vw) scale(0.75);transform-origin: center;z-index:6;}
+[data-slot='out0-5'] {transform: translate(26.75vw, 0px) translate(10px, 0vw) scale(0.75);transform-origin: center;z-index:7;}
+[data-slot='out0-6'] {transform: translate(29.75vw, 0px) translate(10px, 0vw) scale(0.75);transform-origin: center;z-index:8;}
+[data-slot='out0-7'] {transform: translate(32.75vw, 0px) translate(10px, 0vw) scale(0.75);transform-origin: center;z-index:9;}
+[data-slot='out0-8'] {transform: translate(35.75vw, 0px) translate(10px, 0vw) scale(0.75);transform-origin: center;z-index:10;}
+[data-slot='out0-9'] {transform: translate(38.75vw, 0px) translate(10px, 0vw) scale(0.75);transform-origin: center;z-index:11;}
+[data-slot='out0-10'] {transform: translate(41.75vw, 0px) translate(10px, 0vw) scale(0.75);transform-origin: center;z-index:12;}
+[data-slot='out0-11'] {transform: translate(44.75vw, 0px) translate(10px, 0vw) scale(0.75);transform-origin: center;z-index:13;}
+
+/* Card Hover Shake */
+.card[data-slot]:not([data-slot='stack']):not([data-slot='discard']):hover .innerCard {
+  margin-top:-20px;
+  animation: shake 0.5s infinite 0.5s;
+}
+.card[data-slot='stack']:hover .innerCard {
+  margin-top:-20px;
+}
+.card[data-slot='discard']:hover .innerCard {
+  margin-top: 20px;
+}
+@keyframes shake {
+  0% { transform: translate(1px, 1px) rotate(0deg);}
+  10% { transform: translate(-1px, -2px) rotate(-1deg); }
+  20% { transform: translate(-2px, 0px) rotate(1deg); }
+  30% { transform: translate(2px, 2px) rotate(0deg); }
+  40% { transform: translate(1px, -1px) rotate(1deg); }
+  50% { transform: translate(-1px, 2px) rotate(-1deg); }
+  60% { transform: translate(-2px, 1px) rotate(0deg); }
+  70% { transform: translate(2px, 1px) rotate(-1deg); }
+  80% { transform: translate(-1px, -1px) rotate(1deg); }
+  90% { transform: translate(1px, 2px) rotate(0deg); }
+  100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
