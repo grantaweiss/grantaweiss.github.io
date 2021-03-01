@@ -1,0 +1,236 @@
+<!doctype html>
+<html>
+<head>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        #wrapper {
+            height: 100%;
+            width: 80%;
+            margin: 0 10% 0 10%;
+        }
+        form {
+            padding: 5px;
+            background: #eeeeee;
+        }
+        form input, form select {
+            margin-right: 20px;
+        }
+        #outputOptions {
+            margin-top: 5px;
+            padding: 5px;
+            background: #eeeeee;
+        }
+        #outputOptions input {
+            margin-right: 20px;
+        }
+        #inputWrapper {
+            width: 100%;
+            position: relative;
+            margin-top: 5px;
+        }
+        #input {
+            width: 100%;
+            padding: 5px;
+            padding-left: 15px;
+            box-sizing: border-box;
+            background: #f3f3f3;
+        }
+        #inputWrapper:before {
+            content: '>';
+            font-weight: bold;
+            position: absolute;
+            top: 50%;
+            left: 5px;
+            transform: translate(0, -50%);
+        }
+        #outputWrapper {
+            height: 80%;
+            width: 100%;
+            position: relative;
+            box-sizing:border-box;
+            margin: 5px 0 10px 0;
+        }
+        #output {
+            height: 100%;
+            width: 100%;
+            display: block;
+            background: #f3f3f3;
+            box-sizing:border-box;
+            resize: none;
+            border: 1px solid black;
+            padding: 5px;
+        }
+        #output:focus {
+            outline: none;
+            /* border-color: red; */
+            background: #f1f1f1;
+        }
+        .out {
+            color: red;
+        }
+        #clearText {
+            position:absolute;
+            right: 6px;
+            top: 6px;
+            cursor: pointer;
+            color: rgb(109, 109, 109);
+        }
+        #clearText:hover {
+            font-style:italic;
+        }
+    </style>
+</head>
+<div id="wrapper">
+    <form name="connect">
+        <label for="baud">Baud Rate:</label>
+        <input name="baud" type="number" value="115200" />
+
+        <label for="data">Data Bits:</label>
+        <select name="data">
+            <option value="7">7</option>
+            <option value="8" selected>8</option>
+        </select>
+
+        <label for="stop">Stop Bits:</label>
+        <select name="stop">
+            <option value="1" selected>1</option>
+            <option value="2">2</option>
+        </select>
+
+        <label for="parity">Parity:</label>
+        <select name="parity">
+            <option value="none" selected>None</option>
+            <option value="even">Even</option>
+            <option value="odd">Odd</option>
+        </select>
+
+        <label for="flow">Flow Control:</label>
+        <select name="flow">
+            <option value="none">None</option>
+            <option value="hardware" selected>Hardware</option>
+        </select>
+        <br>
+        <input type="submit" value="Connect" />
+    </form>
+    
+    <div id="outputOptions">
+        <label for="localEcho">Local Echo<input id="localEcho" type="checkbox" /></label>
+        <!-- <label for="clearSubmit">Clear on submit<input id="clearSubmit" type="checkbox" checked /></label> -->
+        <label for="newlineSubmit">"\r\n" on submit<input id="newlineSubmit" type="checkbox" checked /></label>
+    </div>
+
+    <div id="inputWrapper">
+        <input id="input" type="text" autocomplete="off" />
+    </div>
+    <div id="outputWrapper">
+        <div id="output" contenteditable=""></div>
+        <span id="clearText">Clear</span>
+    </div>
+</div>
+<script>
+    var output = document.getElementById("output");
+    var input = document.getElementById("input");
+    var clear = document.getElementById("clearText");
+    var echo = document.getElementById("localEcho");
+    // var clearSubmit = document.getElementById("clearSubmit");
+    var newlineSubmit = document.getElementById("newlineSubmit");
+    var connectForm = document.forms.connect;
+    var writer;
+
+    connectForm.addEventListener("submit", function(event){
+        event.preventDefault();
+        getPorts();
+    });
+
+    clear.addEventListener("click", function(event){
+        output.innerHTML = "";
+    });
+
+    input.addEventListener("keypress", function(event){
+        if(event.keyCode == 13) {
+            if(newlineSubmit.checked) {
+                writeTo("\r");
+                setTimeout(function(){writeTo("\n")}, 5);
+                output.appendChild(document.createElement("br"));
+            }
+            // if(clearSubmit.checked) {
+                input.value = "";
+            // }
+        } else {
+            let str = String.fromCharCode(event.keyCode);
+            writeTo(str);
+            if(echo.checked == true) {
+                let newOut = document.createElement("span");
+                newOut.innerText = str;
+                newOut.contentEditable = "false";
+                output.appendChild(newOut);
+            }
+        }
+
+        return;
+    });
+
+    output.addEventListener("keypress", function(event){
+        event.preventDefault();
+    //     if(event.keyCode == 13) {
+    //         writeTo("\r\n");
+    //     } else {
+    //         writeTo(String.fromCharCode(event.keyCode));
+    //     }
+    });
+
+    if(!("serial" in navigator)) {
+        output.value = "Web Serial API not supported\nEnable it under chrome://flags/#enable-experimental-web-platform-features";
+    }
+
+    async function getPorts() {
+        const port = await navigator.serial.requestPort();
+        await port.open(
+            {
+                baudRate: Number.parseInt(connectForm.elements.baud.value), 
+                dataBits: Number.parseInt(connectForm.elements.data.value), 
+                stopBits: Number.parseInt(connectForm.elements.stop.value), 
+                parity: connectForm.elements.parity.value, 
+                flowControl: connectForm.elements.flow.value
+            });
+        
+        let decoder = new TextDecoderStream();
+        inputDone = port.readable.pipeTo(decoder.writable);
+        inputStream = decoder.readable;
+        reader = inputStream.getReader();
+        readLoop();
+
+        const encoder = new TextEncoderStream();
+        outputDone = encoder.readable.pipeTo(port.writable);
+        outputStream = encoder.writable;
+
+        writer = outputStream.getWriter();
+    }
+
+    async function readLoop() {
+        while (true) {
+            const { value, done } = await reader.read();
+            if (value) {
+                let newValue = value.replace('\n', '');
+                let newOut = document.createElement("span");
+                newOut.innerText = newValue;
+                newOut.contentEditable = "false";
+                newOut.classList.add("out");
+                output.appendChild(newOut);
+            }
+            if (done) {
+                console.log('[readLoop] DONE', done);
+                reader.releaseLock();
+                break;
+            }
+        }
+    }
+
+    function writeTo(data) {
+        writer.write(data);
+    }
+</script>
+</html>
