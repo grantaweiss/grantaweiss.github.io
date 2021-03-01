@@ -183,7 +183,7 @@
     });
 
     if(!("serial" in navigator)) {
-        output.value = "Web Serial API not supported\nEnable it under chrome://flags/#enable-experimental-web-platform-features";
+        output.innerHTML = "Web Serial API not supported<br>Enable it under chrome://flags/#enable-experimental-web-platform-features";
     }
 
     async function getPorts() {
