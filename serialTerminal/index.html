@@ -62,6 +62,7 @@
             resize: none;
             border: 1px solid black;
             padding: 5px;
+            overflow:scroll;
         }
         #output:focus {
             outline: none;
@@ -154,7 +155,7 @@
             if(newlineSubmit.checked) {
                 writeTo("\r");
                 setTimeout(function(){writeTo("\n")}, 5);
-                output.appendChild(document.createElement("br"));
+                outputToTerminal(document.createElement("br"));
             }
             // if(clearSubmit.checked) {
                 input.value = "";
@@ -166,7 +167,7 @@
                 let newOut = document.createElement("span");
                 newOut.innerText = str;
                 newOut.contentEditable = "false";
-                output.appendChild(newOut);
+                outputToTerminal(newOut);
             }
         }
 
@@ -219,7 +220,7 @@
                 newOut.innerText = newValue;
                 newOut.contentEditable = "false";
                 newOut.classList.add("out");
-                output.appendChild(newOut);
+                outputToTerminal(newOut);
             }
             if (done) {
                 console.log('[readLoop] DONE', done);
@@ -231,6 +232,12 @@
 
     function writeTo(data) {
         writer.write(data);
+    }
+
+    function outputToTerminal(elm) {
+        output.appendChild(elm);
+
+        output.scrollTop = output.scrollHeight;
     }
 </script>
 </html>
