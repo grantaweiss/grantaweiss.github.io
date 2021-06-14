@@ -26,7 +26,8 @@ videojs('my-video', {
     nativeAudioTracks: true,
     nativeVideoTracks: true,
     nativeTextTracks: true
-  }).ready(function() {
+  }
+}).ready(function() {
   this.hotkeys({
     volumeStep: 0.1,
     seekStep: 5,
