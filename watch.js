@@ -1,13 +1,3 @@
-function setStorage(name, value) {
-  temp = {};
-  temp[name] = value;
-  chrome.storage.local.set(temp, function() {
-    if (chrome.runtime.error) {
-      alert("Runtime error.");
-    }
-  });
-}
-
 var video = document.getElementsByTagName("video")[0];
 var source = document.createElement('source');
 let params = new URLSearchParams(document.location.search.substring(1));
@@ -43,22 +33,19 @@ videojs('my-video', {
   document.getElementById("my-video").appendChild(connectedSpan);
   this.on('ended', function() {
     saveTime = false;
-    chrome.storage.local.remove([refURL], function() {
-      window.close();
-    });
+    localStorage.removeItem(refURL);
+    window.close();
   });
 });
 
-chrome.storage.local.get(refURL, function(data) {
-  if(data[refURL] >= 5) {
-    videojs('my-video').currentTime(data[refURL] - 5);
-  }
-});
-
+const videoTime = localStorage.getItem(refURL);
+if(videoTime >= 5) {
+  videojs('my-video').currentTime(videoTime - 5);
+}
 
 window.addEventListener("beforeunload", function(e) {
   if(saveTime) {
-    setStorage(refURL, videojs('my-video').currentTime());
+    localStorage.setItem(refURL, videojs('my-video').currentTime());
   }
 });
 // window.addEventListener("online", function(e) {
