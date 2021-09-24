@@ -1,6 +1,6 @@
 async function storeObject(dirHandle, objName) {
     return new Promise((resolve, reject) => {
-        let dbReq = indexedDB.open("database", 2);
+        let dbReq = indexedDB.open("database", 1);
         dbReq.onerror = reject;
         dbReq.onupgradeneeded = (event) => {
             let db = dbReq.result;
