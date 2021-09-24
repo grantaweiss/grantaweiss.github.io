@@ -5,7 +5,8 @@ document.getElementById('loadDirectory').addEventListener('click', async () => {
 });
 
 document.getElementById('deleteDirectory').addEventListener('click', async () => {
-    removeObject("dirHandle");
+    await removeObject("dirHandle");
+    await boardDirectoryUpdate();
 });
 
 document.getElementById('addBoard').addEventListener('click', createNewBoard);
