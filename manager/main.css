@@ -129,7 +129,7 @@ body {
     margin-top: 0.7em;
 }
 
-#container .main .columnAdd {
+#container .main #columnAdd {
     background: #ffffff36;
     backdrop-filter: blur(4px);
     margin-right: 0.5em;
@@ -139,7 +139,7 @@ body {
     cursor: pointer;
 }
 
-#container .main .columnAdd:hover {
+#container .main #columnAdd:hover {
     color: white;
 }
 

@@ -10,6 +10,22 @@ document.getElementById('deleteDirectory').addEventListener('click', async () =>
 
 document.getElementById('addBoard').addEventListener('click', createNewBoard);
 
+document.getElementById('columnAdd').addEventListener('click', createColumn);
+
+function createColumn() {
+    let newColEl = document.createElement("div");
+    newColEl.classList.add("column");
+    let newColHeaderEl = document.createElement("div");
+    newColHeaderEl.classList.add("column-header");
+    let newColHeaderTextEl = document.createElement("div");
+    newColHeaderTextEl.classList.add("col-head-text");
+    newColHeaderTextEl.innerText = "New Column";
+
+    document.querySelector("#columnAdd").insertAdjacentElement('beforebegin', newColEl);
+    newColEl.appendChild(newColHeaderEl);
+    newColHeaderEl.appendChild(newColHeaderTextEl);
+}
+
 async function createNewBoard() {
     const activeDir = await getActiveDirectory();
 
