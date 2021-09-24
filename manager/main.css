@@ -47,12 +47,13 @@ body {
     cursor: pointer;
 }
 
-#container .left #boardList li:focus {
-    background: red !important;
-}
-
 #container .left #boardList li:hover {
     background: #ffffff4b;
+}
+
+#container .left #boardList li.selected {
+    background: #ffffff69;
+    font-weight: bold;
 }
 
 #container .top {
@@ -156,4 +157,40 @@ body {
 
 #customContextMenu.visible {
     display: block;
+}
+
+#container .left #boardList li.testAddBoard {
+    display: flex;
+    padding: 0;
+}
+
+.testAddBoard input {
+    display: inline-block;
+    box-sizing: border-box;
+    width: 1em;
+    flex-grow: 1;
+    background: transparent;
+    border: 0;    
+    font-size: 1em;
+    padding: 0.5em;
+    color: white;
+}
+
+.testAddBoard input:focus {
+    outline: 0;
+}
+
+.testAddBoard input::placeholder {
+    color: #ffffffa2;
+  }
+
+.testAddBoard button {
+    background: #ffffff00;
+    border: 0;
+    color: white;
+    font-size: 1.8em;
+    padding: 0;
+    line-height: 0.8em;
+    cursor: pointer;
+    margin: 0 0.3em;
 }

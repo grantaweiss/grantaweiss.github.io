@@ -9,9 +9,22 @@ document.getElementById('deleteDirectory').addEventListener('click', async () =>
     await boardDirectoryUpdate();
 });
 
-document.getElementById('addBoard').addEventListener('click', createNewBoard);
+document.getElementById('addBoardButton').addEventListener('click', createNewBoard);
+document.getElementById("addBoardInput").addEventListener('keyup', (evt) => {
+    if(evt.key == "Enter") {
+        createNewBoard();
+    }
+});
 
 document.getElementById('columnAdd').addEventListener('click', createColumn);
+
+function boardSelected(evt) {
+    const toRemove = document.querySelector("#boardList li.selected");
+    if(toRemove) {
+        toRemove.classList.remove("selected");
+    }
+    evt.target.classList.add("selected");
+}
 
 function createColumn() {
     let newColEl = document.createElement("div");
@@ -35,7 +48,15 @@ async function createNewBoard() {
         return;
     }
 
-    const newFileName = prompt("New Board Name?", "newBoard.json");
+    const newBoardName = document.querySelector("#addBoardInput").value;
+
+    // Todo - more sanitization
+    if(newBoardName.length == 0) {
+        alert("Invalid file name");
+        return;
+    }
+
+    const newFileName = newBoardName.toCamelCase() + ".json";
 
     if(!newFileName) {
         alert("Invalid file name");
@@ -44,6 +65,8 @@ async function createNewBoard() {
 
     const fileHandle = await createFile(activeDir, newFileName);
     await boardDirectoryUpdate(activeDir);
+
+    document.querySelector("#addBoardInput").value = "";
 }
 
 function removeAllChildNodes(parent) {
@@ -114,11 +137,45 @@ async function boardDirectoryUpdate(dirHandle) {
 
         for (const entry of fileList.values()) {
             let boardSelEl = document.createElement("li");
-            boardSelEl.innerText = entry.name;
+            boardSelEl.addEventListener("click", boardSelected);
+
+            let sanitizeName = entry.name;
+            sanitizeName = sanitizeName.slice(0, sanitizeName.lastIndexOf("."));
+            sanitizeName = sanitizeName.fromCamelCase();
+
+            boardSelEl.innerText = sanitizeName;
             addCustomContext(boardSelEl, "boardSel");
             parent.appendChild(boardSelEl);
         }
     }
 
     parent.appendChild(addNewBoardEl);
+}
+
+String.prototype.toCamelCase = function() {
+    const regex = /[A-Z\xC0-\xD6\xD8-\xDE]?[a-z\xDF-\xF6\xF8-\xFF]+|[A-Z\xC0-\xD6\xD8-\xDE]+(?![a-z\xDF-\xF6\xF8-\xFF])|\d+/g;
+
+    let wordArr = this.valueOf().match(regex) || [];
+
+    let result = "";
+
+    for(let i = 0 , len = wordArr.length; i < len; i++) {
+        let currentStr = wordArr[i];
+
+        let tempStr = currentStr.toLowerCase();
+
+        if(i != 0) { 
+            // convert first letter to upper case (the word is in lowercase) 
+            tempStr = tempStr.substr(0, 1).toUpperCase() + tempStr.substr(1);
+        }
+
+        result +=tempStr;
+    }
+
+    return result;
+}
+
+String.prototype.fromCamelCase = function() {
+    const result = this.valueOf().replace(/([A-Z])/g, " $1").replace(/([0-9]+)/g, " $1");
+    return result.charAt(0).toUpperCase() + result.slice(1);
 }
