@@ -26,7 +26,7 @@ async function storeObject(dirHandle, objName) {
 
 async function retrieveObject(objName) {
     return new Promise((resolve, reject) => {
-        let dbReq = indexedDB.open("database");
+        let dbReq = indexedDB.open("database", 1);
         dbReq.onerror = reject;
         dbReq.onsuccess = (event) => {
             let db = dbReq.result;
@@ -48,7 +48,7 @@ async function retrieveObject(objName) {
 
 async function removeObject(objName) {
     return new Promise((resolve, reject) => {
-        let dbReq = indexedDB.open("database");
+        let dbReq = indexedDB.open("database", 1);
         dbReq.onerror = reject;
         dbReq.onsuccess = (event) => {
             let db = dbReq.result;
