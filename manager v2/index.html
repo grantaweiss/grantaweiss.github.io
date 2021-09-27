@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Management Board</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <div id="container">
+        <div class="top">
+            <div class="title">Grant's Task Management Board</div>
+            <div><button id="loadDirectory">Load Dir</button></div>
+            <div><button id="deleteDirectory">Remove Dir</button></div>
+            <div><button id="doBackground">Settings</button></div>
+        </div>
+        <div class="left">
+            <h2 class="showDirHeader">Boards</h2>
+            <h2 class="loadDirHeader">Load Directory</h2>
+            <h2 class="newDirHeader">New Directory</h2>
+            <ul id="boardList">
+                <li class="testAddBoard">
+                    <input id="addBoardInput" type="text" placeholder="New Board">
+                    <button id="addBoardButton">+</button>
+                </li>
+            </ul>
+            <div id="loadDirButton" class="dirButton">
+                <span>&#x27f3;</span>
+            </div>
+            <div id="newDirButton" class="dirButton">
+                <span>+</span>
+            </div>
+        </div>
+        <div class="main">
+            <div class="column">
+                <div class="column-header">
+                    <div class="col-head-text">Todo</div>
+                </div>
+                <div class="card">1.1</div>
+            </div>
+            <div class="column">
+                <div class="column-header">
+                    <div class="col-head-text">Working</div>
+                </div>
+                <div class="card">2.1</div>
+                <div class="card">2.2</div>
+                <div class="card">2.3</div>
+            </div>
+            <div class="column">
+                <div class="column-header">
+                    <div class="col-head-text">Blocked</div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="column-header">
+                    <div class="col-head-text">Finished</div>
+                </div>
+            </div>
+            <div id="columnAdd">+</div>
+        </div>
+    </div>
+    <div id="customContextMenu" style="top: 0; left: 0;">
+        <div>Context Menu</div>
+    </div>
+    <div id="settings">
+        <div id="backgroundSettings">
+            <h2>Background</h2>
+            <label><input type="radio" name="backgroundType" value="random">Random</label>
+            <label><input type="radio" name="backgroundType" value="fixed" checked>Fixed</label>
+            <hr>
+            <label><input type="radio" name="backgroundRandType" value="randEvery" checked>Random Every</label>
+            <label><input type="radio" name="backgroundRandType" value="randDaily">Random Daily</label>
+            <label><input type="radio" name="backgroundRandType" value="randWeekly">Random Weekly</label>
+            <hr>
+            Search terms (CSV): <input placeholder="nature,water" class="backgroundSearchTerm">
+            <button>Submit</button>
+        </div>
+    </div>
+    <script src="databaseHelper.js"></script>
+    <script src="file.js"></script>
+
+    <script src="card.js"></script>
+    <script src="list.js"></script>
+    <script src="board.js"></script>
+    <script src="directory.js"></script>
+
+    <script src="interaction.js"></script>
+</body>
+</html>
