@@ -61,12 +61,29 @@ class Directory {
     }
 
     // Add a board to this directory
-    async addBoard(entry) {
-        console.log("adding board " + entry.name);
+    async loadBoard(entry) {
+        // console.log("Loading board " + entry.name);
 
-        const newBoard = await Board.new(entry);
+        const newBoard = await Board.load(entry);
+        // console.log(newBoard);
 
         this.boardList[newBoard.created] = newBoard;
+    }
+
+    static async addBoard(_name) {
+        const dir = Directory.activeDir;
+        const name = _name.toCamelCase() + ".json";
+
+        if(!dir || !dir.hasWritePermission()) {
+            alert("Cannot add a board without an active directory");
+            return;
+        }
+
+        console.log("Adding board " + name);
+
+        const newBoard = await Board.add(name, dir.handle);
+
+        dir.boardList[newBoard.created] = newBoard;
     }
 
     static async initialize() {

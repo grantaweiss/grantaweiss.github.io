@@ -58,6 +58,7 @@ async function createFile_DEPRECATED(dirHandle) {
 }
 
 async function createFile(dirHandle, name) {
+    console.log(dirHandle, name);
     let fileHandle = await dirHandle.getFileHandle(name, {create: true});
 
     if(!fileHandle) {

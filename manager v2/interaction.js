@@ -21,10 +21,9 @@ async function boardList_active(dir) {
     dirListEl.classList.remove("newDir", "loadDir");
     dirListEl.classList.add("showDir");
 
-    await sleep(500); // TODO: remove me
     for (const entry of files) {
-        await dir.addBoard(entry);
-        await sleep(200); // TODO: remove me
+        await dir.loadBoard(entry);
+        await sleep(2); // TODO: remove me
     }
 
     function sleep(ms) {
@@ -46,18 +45,48 @@ function boardList_new() {
     dirListEl.classList.add("newDir");
 }
 
-function boardList_addEl(name, referenceId) {
+function boardList_addEl(name, referenceId, pos = -2) {
     let boardSelEl = document.createElement("li");
-    // boardSelEl.addEventListener("click", boardSelected);
+    boardSelEl.addEventListener("click", boardSelected);
     boardSelEl.innerText = name;
     boardSelEl.dataset.boardRef = referenceId;
 
-    document.querySelector("#boardList").insertChildAtIndex(boardSelEl, -2);
+    document.querySelector("#boardList").insertChildAtIndex(boardSelEl, pos);
 }
 
+function boardSelected(evt) {
+    const toRemove = document.querySelector("#boardList li.selected");
+    if(toRemove) {
+        toRemove.classList.remove("selected");
+    }
+    evt.target.classList.add("selected");
+    Directory.activeDir.boardList[evt.target.dataset.boardRef].load();
+}
+
+document.querySelector("#columnAdd").addEventListener("click", (evt) => {
+    const activeBoardEl = document.querySelector("#boardList li.selected");
+    const activeBoard = Directory.activeDir.boardList[activeBoardEl.dataset.boardRef];
+    activeBoard.addList();
+
+});
 document.querySelector("#loadDirButton").addEventListener("click", Directory.load);
 document.querySelector("#newDirButton").addEventListener("click", Directory.new);
 document.querySelector("#doBackground").addEventListener("click", backgroundEditor);
+
+
+document.querySelectorAll("input[name='backgroundType']").forEach((input) => {
+    input.addEventListener('change', updateBackgroundType);
+});
+async function updateBackgroundType(evt) {
+    let backgroundType = "fixed";
+
+    if(evt.target.value == "random") {
+        backgroundType = document.querySelector("#backgroundSettings [name='backgroundRandType']:checked").value;
+    }
+
+    await storeObject(backgroundType, "backgroundType");
+}
+
 document.querySelector("#backgroundSettings button").addEventListener("click", async (evt) => {
     const searchTerms = document.querySelector("#backgroundSettings .backgroundSearchTerm").value || "nature,water";
 
@@ -72,12 +101,28 @@ document.querySelector("#backgroundSettings button").addEventListener("click", a
 
     let resp = await fetch(backgroundUrl, {method: 'HEAD'});
 
-    document.querySelector("#container").style.background = `url("${resp.url}")`;
+    // Load the image before changing background in css
+    let img = new Image();
+    img.onload = () => {
+        img = undefined;
+        document.querySelector("#container").style.background = `url("${resp.url}")`;
+    }
+    img.src = resp.url;
 
     await storeObject(searchTerms, "backgroundSearch");
     await storeObject(resp.url, "backgroundImage");
     await storeObject(backgroundType, "backgroundType");
 });
+
+document.getElementById('addBoardButton').addEventListener('click', (evt) => {
+    Directory.addBoard(document.querySelector("#addBoardInput").value);
+});
+document.querySelector("#addBoardInput").addEventListener('keyup', (evt) => {
+    if(evt.key == "Enter") {
+        Directory.addBoard(evt.target.value);
+    }
+});
+
 
 Element.prototype.insertChildAtIndex = function(child, index) {
     if (!index) index = 0
@@ -114,3 +159,31 @@ async function buildWallpaperUrl(searchTerms, backgroundType, _featured = false,
             break;
     }
 }
+
+String.prototype.toCamelCase = function() {
+    const regex = /[A-Z\xC0-\xD6\xD8-\xDE]?[a-z\xDF-\xF6\xF8-\xFF]+|[A-Z\xC0-\xD6\xD8-\xDE]+(?![a-z\xDF-\xF6\xF8-\xFF])|\d+/g;
+
+    let wordArr = this.valueOf().match(regex) || [];
+
+    let result = "";
+
+    for(let i = 0 , len = wordArr.length; i < len; i++) {
+        let currentStr = wordArr[i];
+
+        let tempStr = currentStr.toLowerCase();
+
+        if(i != 0) { 
+            // convert first letter to upper case (the word is in lowercase) 
+            tempStr = tempStr.substr(0, 1).toUpperCase() + tempStr.substr(1);
+        }
+
+        result +=tempStr;
+    }
+
+    return result;
+}
+
+String.prototype.fromCamelCase = function() {
+    const result = this.valueOf().replace(/([A-Z])/g, " $1").replace(/([0-9]+)/g, " $1");
+    return result.charAt(0).toUpperCase() + result.slice(1);
+};

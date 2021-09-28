@@ -4,27 +4,77 @@ class Board {
         this.fileName = entry.name;
         this.lastModified = entry.lastModified;
         this.name = entry.name.slice(0, entry.name.lastIndexOf(".")).fromCamelCase();
-        this.constructMe();
-    }
-
-    async constructMe() {
-        this.created = Date.now(); // TODO: remove me - get this from json
-
-        boardList_addEl(this.name, this.created);
+        this.listArr = [];
     }
 
     // Add a list to this board
     addList() {
-
+        let data = {};
+        data.title = "New List";
+        const list = new List(data);
+        this.listArr.push(list);
+        document.querySelector("#container .main").insertChildAtIndex(list.element, -2);
     }
 
-    static async new(entry) {
+    async load() {
+        const json = await getJsonFromFile(this.fileObj);
+        if(json && json.lists) {
+            json.lists.forEach(async item => {
+                const listObj = await List.buildFromJson(item);
+                this.listArr.push(listObj);
+            });
+        }
+    }
+
+    static async builder(entry) {
         const board = new Board(entry);
+        board.fileObj = await board.file.getFile();
+        const json = await getJsonFromFile(board.fileObj);
+
+        board.created = Date.now();
+        let pos = 0;
+        if(json && json.created) {
+            board.created = json.created;
+            pos = -2;
+        }
+
+        await boardList_addEl(board.name, board.created, pos);
+
         return board;
+    }
+
+    static async load(entry) {
+        if(!entry.handler) {
+            alert("Cannot load a board from an invalid file");
+            return;
+        }
+        return Board.builder(entry);
+    }
+
+    static async add(name, dir) {
+        if(!name) {
+            alert("Cannot add a board without a valid name");
+            return;
+        }
+        
+        let data = {};
+        data.handler = await createFile(dir, name);
+        data.name = name;
+        const fileData = await data.handler.getFile();
+        data.lastModified = fileData.lastModified;
+
+        return Board.load(data);
     }
 }
 
-String.prototype.fromCamelCase = function() {
-    const result = this.valueOf().replace(/([A-Z])/g, " $1").replace(/([0-9]+)/g, " $1");
-    return result.charAt(0).toUpperCase() + result.slice(1);
-};
+async function getJsonFromFile(fileObj) {
+    const fileText = await fileObj.text();
+    let fileJson;
+    try {
+        fileJson = JSON.parse(fileText);
+    } catch (error) {
+        
+    }
+
+    return fileJson;
+}
